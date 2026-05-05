@@ -1,117 +1,146 @@
-// CONFIG
-const b2wpp_whatsappNumber = '556239218600';
-const b2wpp_webhookUrl = 'https://webhookn8n.b2agencia.com.br/webhook/send-lead/landingpage/v2';
-const b2wpp_defaultMessage = 'Vim pelo site e gostaria de saber mais sobre stands e cenografia';
+document.addEventListener('DOMContentLoaded', function () {
 
-// MODAL
-function b2wpp_openModal(e){
-  e.preventDefault();
-  document.getElementById('b2wpp-modal').classList.add('b2wpp-modal--active');
-}
+  // CONFIG
+  const b2wpp_whatsappNumber = '556239218600';
+  const b2wpp_webhookUrl = 'https://webhookn8n.b2agencia.com.br/webhook/send-lead/landingpage/v2';
+  const b2wpp_defaultMessage = 'Vim pelo site e gostaria de saber mais sobre stands e cenografia';
 
-function b2wpp_closeModal(){
-  document.getElementById('b2wpp-modal').classList.remove('b2wpp-modal--active');
-  document.getElementById('b2wpp-form').reset();
-  b2wpp_clearErrors();
-}
+  // ELEMENTOS
+  const modal = document.getElementById('b2wpp-modal');
+  const form = document.getElementById('b2wpp-form');
+  const inputName = document.getElementById('b2wpp-name');
+  const inputPhone = document.getElementById('b2wpp-phone');
+  const inputEmail = document.getElementById('b2wpp-email');
+  const inputCompany = document.getElementById('b2wpp-company');
+  const inputIdUnidade = document.getElementById('b2wpp-id-unidade');
 
-// ERROS
-function b2wpp_clearErrors(){
-  document.querySelectorAll('.b2wpp-form__group')
-    .forEach(g => g.classList.remove('b2wpp-form__group--error'));
-}
-
-// MÁSCARA
-function b2wpp_maskPhone(v){
-  v = v.replace(/\D/g,'').substring(0,11);
-
-  if(v.length <= 10){
-    v = v.replace(/^(\d{2})(\d)/,'($1) $2');
-    v = v.replace(/(\d{4})(\d)/,'$1-$2');
-  } else {
-    v = v.replace(/^(\d{2})(\d)/,'($1) $2');
-    v = v.replace(/(\d{5})(\d)/,'$1-$2');
+  // ========================
+  // MODAL
+  // ========================
+  window.b2wpp_openModal = function (e) {
+    e.preventDefault();
+    modal.classList.add('b2wpp-modal--active');
   }
-  return v;
-}
 
-document.getElementById('b2wpp-phone')
-  .addEventListener('input', e=>{
-    e.target.value = b2wpp_maskPhone(e.target.value);
+  window.b2wpp_closeModal = function () {
+    modal.classList.remove('b2wpp-modal--active');
+    form.reset();
+    clearErrors();
+  }
+
+  // ========================
+  // ERROS
+  // ========================
+  function clearErrors() {
+    document.querySelectorAll('.b2wpp-form__group')
+      .forEach(g => g.classList.remove('b2wpp-form__group--error'));
+  }
+
+  // ========================
+  // MÁSCARA TELEFONE
+  // ========================
+  function maskPhone(v) {
+    v = v.replace(/\D/g, '').substring(0, 11);
+
+    if (v.length <= 10) {
+      v = v.replace(/^(\d{2})(\d)/, '($1) $2');
+      v = v.replace(/(\d{4})(\d)/, '$1-$2');
+    } else {
+      v = v.replace(/^(\d{2})(\d)/, '($1) $2');
+      v = v.replace(/(\d{5})(\d)/, '$1-$2');
+    }
+
+    return v;
+  }
+
+  inputPhone.addEventListener('input', function (e) {
+    e.target.value = maskPhone(e.target.value);
   });
 
-// WEBHOOK
-function b2wpp_send(data){
-  fetch(b2wpp_webhookUrl,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(data)
-  }).catch(()=>{});
-}
-
-// VALIDAR
-function b2wpp_validate(){
-  b2wpp_clearErrors();
-
-  const name = b2wpp_name.value.trim();
-  const phone = b2wpp_phone.value.replace(/\D/g,'');
-  const email = b2wpp_email.value.trim();
-  const company = b2wpp_company.value.trim();
-
-  let ok = true;
-
-  if(!name){
-    b2wpp_name.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
-    ok=false;
+  // ========================
+  // WEBHOOK
+  // ========================
+  function send(data) {
+    fetch(b2wpp_webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).catch(() => {});
   }
 
-  if(phone.length < 10){
-    b2wpp_phone.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
-    ok=false;
+  // ========================
+  // VALIDAÇÃO
+  // ========================
+  function validate() {
+    clearErrors();
+
+    const name = inputName.value.trim();
+    const phone = inputPhone.value.replace(/\D/g, '');
+    const email = inputEmail.value.trim();
+    const company = inputCompany.value.trim();
+
+    let ok = true;
+
+    if (!name) {
+      inputName.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
+      ok = false;
+    }
+
+    if (phone.length < 10) {
+      inputPhone.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
+      ok = false;
+    }
+
+    if (!email) {
+      inputEmail.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
+      ok = false;
+    }
+
+    if (!company) {
+      inputCompany.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
+      ok = false;
+    }
+
+    return ok;
   }
 
-  if(!email){
-    b2wpp_email.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
-    ok=false;
-  }
+  // ========================
+  // SUBMIT
+  // ========================
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
 
-  if(!company){
-    b2wpp_company.closest('.b2wpp-form__group').classList.add('b2wpp-form__group--error');
-    ok=false;
-  }
+    if (!validate()) return;
 
-  return ok;
-}
+    const data = {
+      name: inputName.value.trim(),
+      phone: inputPhone.value.replace(/\D/g, ''),
+      email: inputEmail.value.trim(),
+      company: inputCompany.value.trim(),
+      id_unidade: inputIdUnidade.value
+    };
 
-// SUBMIT
-document.getElementById('b2wpp-form')
-.addEventListener('submit', function(e){
+    send(data);
 
-  e.preventDefault();
-  if(!b2wpp_validate()) return;
+    const msg = encodeURIComponent(`Olá! Meu nome é ${data.name}. ${b2wpp_defaultMessage}`);
 
-  const data = {
-    name: b2wpp_name.value.trim(),
-    phone: b2wpp_phone.value.replace(/\D/g,''),
-    email: b2wpp_email.value.trim(),
-    company: b2wpp_company.value.trim(),
-    id_unidade: b2wpp_id_unidade.value
-  };
+    window.open(
+      `https://api.whatsapp.com/send?phone=${b2wpp_whatsappNumber}&text=${msg}`,
+      '_blank'
+    );
 
-  b2wpp_send(data);
+    window.b2wpp_closeModal();
+  });
 
-  const msg = encodeURIComponent(`Olá! Meu nome é ${data.name}. ${b2wpp_defaultMessage}`);
-  window.open(`https://api.whatsapp.com/send?phone=${b2wpp_whatsappNumber}&text=${msg}`,'_blank');
+  // ========================
+  // FECHAR
+  // ========================
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) window.b2wpp_closeModal();
+  });
 
-  b2wpp_closeModal();
-});
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') window.b2wpp_closeModal();
+  });
 
-// FECHAR
-document.getElementById('b2wpp-modal')
-.addEventListener('click',e=>{
-  if(e.target.id === 'b2wpp-modal') b2wpp_closeModal();
-});
-
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') b2wpp_closeModal();
 });
