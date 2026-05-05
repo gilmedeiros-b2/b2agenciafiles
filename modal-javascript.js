@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const b2wpp_defaultMessage = 'Vim pelo site e gostaria de saber mais sobre stands e cenografia';
 
   // ========================
-  // ELEMENTOS
+  // ELEMENTOS (SAFE)
   // ========================
   const modal = document.getElementById('b2wpp-modal');
   const form = document.getElementById('b2wpp-form');
@@ -18,16 +18,18 @@ document.addEventListener('DOMContentLoaded', function () {
   const inputCompany = document.getElementById('b2wpp-company');
   const inputIdUnidade = document.getElementById('b2wpp-id-unidade');
 
+  if (!form) return; // evita erro se não existir
+
   // ========================
-  // MODAL (GLOBAL PARA HTML onclick)
+  // MODAL
   // ========================
   window.b2wpp_openModal = function (e) {
     e.preventDefault();
-    modal.classList.add('b2wpp-modal--active');
+    modal?.classList.add('b2wpp-modal--active');
   };
 
   window.b2wpp_closeModal = function () {
-    modal.classList.remove('b2wpp-modal--active');
+    modal?.classList.remove('b2wpp-modal--active');
     form.reset();
     clearErrors();
   };
@@ -57,24 +59,42 @@ document.addEventListener('DOMContentLoaded', function () {
     return v;
   }
 
-  inputPhone.addEventListener('input', function (e) {
+  inputPhone?.addEventListener('input', e => {
     e.target.value = maskPhone(e.target.value);
   });
 
   // ========================
-  // UTM + CLICK IDS
+  // CAPTURA + PERSISTÊNCIA
   // ========================
   function getParams() {
     const params = new URLSearchParams(window.location.search);
 
+    const data = {
+      utm_source: params.get('utm_source'),
+      utm_medium: params.get('utm_medium'),
+      utm_campaign: params.get('utm_campaign'),
+      utm_content: params.get('utm_content'),
+      utm_term: params.get('utm_term'),
+      fbclid: params.get('fbclid'),
+      gclid: params.get('gclid')
+    };
+
+    // salva se existir
+    Object.keys(data).forEach(key => {
+      if (data[key]) {
+        localStorage.setItem(`b2wpp_${key}`, data[key]);
+      }
+    });
+
+    // retorna sempre (prioriza URL, fallback localStorage)
     return {
-      utm_source: params.get('utm_source') || '',
-      utm_medium: params.get('utm_medium') || '',
-      utm_campaign: params.get('utm_campaign') || '',
-      utm_content: params.get('utm_content') || '',
-      utm_term: params.get('utm_term') || '',
-      fbclid: params.get('fbclid') || '',
-      gclid: params.get('gclid') || ''
+      utm_source: data.utm_source || localStorage.getItem('b2wpp_utm_source') || '',
+      utm_medium: data.utm_medium || localStorage.getItem('b2wpp_utm_medium') || '',
+      utm_campaign: data.utm_campaign || localStorage.getItem('b2wpp_utm_campaign') || '',
+      utm_content: data.utm_content || localStorage.getItem('b2wpp_utm_content') || '',
+      utm_term: data.utm_term || localStorage.getItem('b2wpp_utm_term') || '',
+      fbclid: data.fbclid || localStorage.getItem('b2wpp_fbclid') || '',
+      gclid: data.gclid || localStorage.getItem('b2wpp_gclid') || ''
     };
   }
 
@@ -87,10 +107,17 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function getFacebookCookies() {
-    return {
-      fbp: getCookie('_fbp'),
-      fbc: getCookie('_fbc')
-    };
+    let fbp = getCookie('_fbp');
+    let fbc = getCookie('_fbc');
+
+    const fbclid = getParams().fbclid;
+
+    // gera fbc se não existir
+    if (!fbc && fbclid) {
+      fbc = `fb.1.${Date.now()}.${fbclid}`;
+    }
+
+    return { fbp, fbc };
   }
 
   // ========================
@@ -98,20 +125,26 @@ document.addEventListener('DOMContentLoaded', function () {
   // ========================
   function send(data) {
 
+    const utm = getParams();
+    const facebook = getFacebookCookies();
+
     const payload = {
       ...data,
-      utm: getParams(),
-      facebook: getFacebookCookies(),
-      timestamp: new Date().toISOString(),
+      utm,
+      facebook,
+      user_agent: navigator.userAgent,
       page_url: window.location.href,
-      referrer: document.referrer
+      referrer: document.referrer,
+      timestamp: new Date().toISOString()
     };
+
+    console.log('B2WPP PAYLOAD:', payload); // DEBUG
 
     fetch(b2wpp_webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }).catch(() => {});
+    }).catch(err => console.log('Webhook erro:', err));
   }
 
   // ========================
@@ -181,11 +214,12 @@ document.addEventListener('DOMContentLoaded', function () {
   // ========================
   // FECHAR
   // ========================
-  modal.addEventListener('click', function (e) {
+  modal?.addEventListener('click', e => {
     if (e.target === modal) window.b2wpp_closeModal();
   });
 
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', e => {
     if (e.key === 'Escape') window.b2wpp_closeModal();
   });
+
 });
