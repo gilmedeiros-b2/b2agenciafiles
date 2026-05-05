@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-
+window.dataLayer = window.dataLayer || [];
   // ========================
   // CONFIG
   // ========================
@@ -145,6 +145,7 @@ document.addEventListener('DOMContentLoaded', function () {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).catch(err => console.log('Webhook erro:', err));
+     window.dataLayer.push({'event': 'form_submited'});
   }
 
   // ========================
