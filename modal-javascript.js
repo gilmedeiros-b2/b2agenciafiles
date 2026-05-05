@@ -1,11 +1,15 @@
 document.addEventListener('DOMContentLoaded', function () {
 
+  // ========================
   // CONFIG
+  // ========================
   const b2wpp_whatsappNumber = '556239218600';
   const b2wpp_webhookUrl = 'https://webhookn8n.b2agencia.com.br/webhook/send-lead/landingpage/v2';
   const b2wpp_defaultMessage = 'Vim pelo site e gostaria de saber mais sobre stands e cenografia';
 
+  // ========================
   // ELEMENTOS
+  // ========================
   const modal = document.getElementById('b2wpp-modal');
   const form = document.getElementById('b2wpp-form');
   const inputName = document.getElementById('b2wpp-name');
@@ -15,18 +19,18 @@ document.addEventListener('DOMContentLoaded', function () {
   const inputIdUnidade = document.getElementById('b2wpp-id-unidade');
 
   // ========================
-  // MODAL
+  // MODAL (GLOBAL PARA HTML onclick)
   // ========================
   window.b2wpp_openModal = function (e) {
     e.preventDefault();
     modal.classList.add('b2wpp-modal--active');
-  }
+  };
 
   window.b2wpp_closeModal = function () {
     modal.classList.remove('b2wpp-modal--active');
     form.reset();
     clearErrors();
-  }
+  };
 
   // ========================
   // ERROS
@@ -58,13 +62,55 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // ========================
+  // UTM + CLICK IDS
+  // ========================
+  function getParams() {
+    const params = new URLSearchParams(window.location.search);
+
+    return {
+      utm_source: params.get('utm_source') || '',
+      utm_medium: params.get('utm_medium') || '',
+      utm_campaign: params.get('utm_campaign') || '',
+      utm_content: params.get('utm_content') || '',
+      utm_term: params.get('utm_term') || '',
+      fbclid: params.get('fbclid') || '',
+      gclid: params.get('gclid') || ''
+    };
+  }
+
+  // ========================
+  // COOKIES
+  // ========================
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : '';
+  }
+
+  function getFacebookCookies() {
+    return {
+      fbp: getCookie('_fbp'),
+      fbc: getCookie('_fbc')
+    };
+  }
+
+  // ========================
   // WEBHOOK
   // ========================
   function send(data) {
+
+    const payload = {
+      ...data,
+      utm: getParams(),
+      facebook: getFacebookCookies(),
+      timestamp: new Date().toISOString(),
+      page_url: window.location.href,
+      referrer: document.referrer
+    };
+
     fetch(b2wpp_webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(payload)
     }).catch(() => {});
   }
 
@@ -142,5 +188,4 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') window.b2wpp_closeModal();
   });
-
 });
